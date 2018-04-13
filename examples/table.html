@@ -186,7 +186,7 @@ layui.use('table', function(){
     ,limit: 30
     ,toolbar: '#toolbarDemo'
     ,cols: [[
-      {checkbox:true, fixed: 'left'}
+      {type: 'checkbox', fixed: 'left'}
       ,{field:'id', title:'ID', width:80, fixed: 'left', unresize: true, sort: true}
       ,{field:'username', title:'用户名', width:120, edit: 'text', templet: '#usernameTpl'}
       ,{field:'email', title:'邮箱', width:150}
@@ -204,6 +204,7 @@ layui.use('table', function(){
   table.render({
     elem: '#test2'
     ,url: 'json/table/demo1.json'
+    ,contentType: 'application/json'
     ,page: { //详细参数可参考 laypage 组件文档
       curr: 5
       ,groups: 1

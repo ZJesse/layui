@@ -67,6 +67,7 @@ layui.define('layer' , function(exports){
     ,data: {} //请求上传的额外参数
     ,drag: true //是否允许拖拽上传
     ,size: 0 //文件限制大小，默认不限制
+    ,number: 0 //允许同时上传的文件数，默认不限制
     ,multiple: false //是否允许多文件上传，不支持ie8-9
   };
   
@@ -87,7 +88,7 @@ layui.define('layer' , function(exports){
     var that = this
     ,options = that.config
     ,elemFile = that.elemFile = $([
-      '<input class="'+ ELEM_FILE +'" type="file" name="'+ options.field +'"'
+      '<input class="'+ ELEM_FILE +'" type="file" accept="'+ options.acceptMime +'" name="'+ options.field +'"'
       ,(options.multiple ? ' multiple' : '') 
       ,'>'
     ].join(''))
@@ -133,6 +134,7 @@ layui.define('layer' , function(exports){
       options.elem.next('.'+ ELEM_IFRAME).append(function(){
         var arr = [];
         layui.each(options.data, function(key, value){
+          value = typeof value === 'function' ? value() : value;
           arr.push('<input type="hidden" name="'+ key +'" value="'+ value +'">')
         });
         return arr.join('');
@@ -195,6 +197,7 @@ layui.define('layer' , function(exports){
         
         //追加额外的参数
         layui.each(options.data, function(key, value){
+          value = typeof value === 'function' ? value() : value;
           formData.append(key, value);
         });
         
@@ -206,6 +209,7 @@ layui.define('layer' , function(exports){
           ,contentType: false 
           ,processData: false
           ,dataType: 'json'
+          ,headers: options.headers || {}
           ,success: function(res){
             successful++;
             done(index, res);
@@ -323,6 +327,8 @@ layui.define('layer' , function(exports){
       ? ((elemFile.value.match(/[^\/\\]+\..+/g)||[]) || '')
     : value;
     
+    if(value.length === 0) return;
+
     switch(options.accept){
       case 'file': //一般文件
         if(exts && !RegExp('\\w\\.('+ exts +')$', 'i').test(escape(value))){
@@ -355,9 +361,23 @@ layui.define('layer' , function(exports){
       break;
     }
     
+    //检验文件数量
+    that.fileLength = function(){
+      var length = 0
+      ,items = files || that.files || that.chooseFiles || elemFile.files;
+      layui.each(items, function(){
+        length++;
+      });
+      return length;
+    }();
+    if(options.number && that.fileLength > options.number){
+      return that.msg('同时最多只能上传的数量为：'+ options.number);
+    }
+    
     //检验文件大小
     if(options.size > 0 && !(device.ie && device.ie < 10)){
       var limitSize;
+      
       layui.each(that.chooseFiles, function(index, file){
         if(file.size > 1024*options.size){
           var size = options.size/1024;
@@ -447,7 +467,6 @@ layui.define('layer' , function(exports){
     //文件选择
     that.elemFile.off('upload.change').on('upload.change', function(){
       var files = this.files || [];
-      that.fileLength = files.length;
       setChooseFile(files);
       options.auto ? that.upload() : setChooseText(files); //是否自动触发上传
     });
